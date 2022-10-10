@@ -48,3 +48,30 @@ export const get_car = async (id: number) => {
       }
   }
 }
+
+export const put_car = async (id: number, data: any) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "API-Key": "secret",
+      },
+      body: JSON.stringify(data),
+    })
+
+    const res_json = await response.json()
+
+    if (response.status === 400 || response.status === 404)
+      return {
+        error: res_json,
+      }
+
+    return { data: res_json }
+  } catch (error) {
+    if (error instanceof Error)
+      return {
+        error: error?.message,
+      }
+  }
+}

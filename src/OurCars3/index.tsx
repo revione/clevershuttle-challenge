@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
-import { getData } from "./fetch"
-import { get_cars, get_car } from "./Fetch2"
+import { get_cars, get_car, put_car } from "./Fetch2"
 
 type TStatus = "available" | "in-maintenance" | "out-of-service"
 
@@ -13,56 +12,6 @@ type TCar = {
   status: TStatus
   createdAt: Date
   lastUpdatedAt: Date
-}
-
-const STATUS = ["available", "in-maintenance", "out-of-service"]
-
-const make_a_date = () => new Date(new Date().toISOString())
-
-const car_example = {
-  id: 0,
-  brand: "Brand",
-  licensePlate: "LicensePlate",
-  manufacturer: "Manufacturer",
-  operationCity: "OperationCity",
-  status: "available",
-  createdAt: make_a_date(),
-  lastUpdatedAt: make_a_date(),
-}
-
-function getRandomIntInclusive(min: number, max: number) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random() * (max - min + 1) + min) // The maximum is inclusive and the minimum is inclusive
-}
-
-const make_dummy_cars = () =>
-  Array.from({ length: 10 }, (_, i) => ({
-    ...car_example,
-    id: i,
-    status: STATUS[getRandomIntInclusive(0, 2)] as TStatus,
-    createdAt: make_a_date(),
-    lastUpdatedAt: make_a_date(),
-  }))
-
-const find_internal_car = (cars: TCar[], car_id: number) => {
-  if (isNaN(Number(car_id)))
-    return {
-      error: "Invalid type for id",
-    }
-
-  const car_index = cars.findIndex(
-    (inner_car) => inner_car.id === Number(car_id)
-  )
-
-  if (car_index === -1)
-    return {
-      error: "204 Content Not Found",
-    }
-
-  return {
-    data: cars[car_index],
-  }
 }
 
 const Field = ({
@@ -87,7 +36,7 @@ const Field = ({
 )
 
 type Tupdate_and_delete = {
-  update_car: (car: TCar) =>
+  update_car: (car: TCar) => Promise<
     | {
         error: string
         message?: undefined
@@ -96,6 +45,7 @@ type Tupdate_and_delete = {
         message: string
         error?: undefined
       }
+  >
   delete_car: (car_id: number) =>
     | {
         error: string
@@ -138,16 +88,27 @@ export const Car = ({
   } = car
 
   const [is_editing, set_is_editing] = useState(false)
+  const [error, set_error] = useState("")
 
   const handle_edit = () => {
     set_is_editing(true)
   }
 
-  const handle_save = () => {
+  const handle_save = async () => {
+    
+    const response = await update_car(car_edition)
+
+    if (response?.error) {
+      set_error(response.error)
+
+      setTimeout(() => {
+        set_error("")
+      }, 5000)
+      return
+    }
+
+    if (response.message) console.log("response.message : ", response.message)
     set_is_editing(false)
-    const response = update_car(car_edition)
-    if (response.error) console.log(response.error)
-    if (response.message) console.log(response.message)
   }
 
   const handle_delete = () => {
@@ -168,6 +129,9 @@ export const Car = ({
         margin: "5rem",
       }}
     >
+      {error && <div style={{
+        color: "red",
+      }}>{error}</div>}
       {!is_editing && (
         <>
           <div>id : {id}</div>
@@ -189,25 +153,25 @@ export const Car = ({
           }}
         >
           <Field
-            name="LicensePlate"
+            name="licensePlate"
             value={car_edition.licensePlate}
             onChange={handle_change_input}
           />
 
           <Field
-            name="Manufacturer"
+            name="manufacturer"
             value={car_edition.manufacturer}
             onChange={handle_change_input}
           />
 
           <Field
-            name="OperationCity"
+            name="operationCity"
             value={car_edition.operationCity}
             onChange={handle_change_input}
           />
 
           <Field
-            name="Status"
+            name="status"
             value={car_edition.status}
             onChange={handle_change_input}
           />
@@ -248,7 +212,7 @@ export const SearchACar = ({
     e.preventDefault()
 
     const response = await find_car(Number(car_id))
-    
+
     if (response?.error) {
       set_car_founded(undefined)
 
@@ -289,9 +253,13 @@ export const SearchACar = ({
         <button type="submit">Search</button>
       </form>
 
-      <div style={{
-        margin: '2rem 5rem'
-      }}>{error && error}</div>
+      <div
+        style={{
+          margin: "2rem 5rem",
+        }}
+      >
+        {error && error}
+      </div>
 
       {car_founded && <Car {...{ car: car_founded, update_car, delete_car }} />}
     </div>
@@ -334,21 +302,27 @@ const useCars = () => {
     }
   }
 
-  const update_car = (car: TCar) => {
-    if (!cars)
-      return {
-        error: "No cars",
-      }
+  const update_car = async (car: TCar) => {
+    try {
+      const response = await put_car(car.id, car)
 
-    const new_cars = cars.map((inner_car) => {
-      if (inner_car.id === car.id) return car
-      return inner_car
-    })
+      if (!cars)
+        return {
+          error: "No cars",
+        }
 
-    setCars(new_cars)
+      if (response?.error) return response
 
-    return {
-      message: "Car edited.",
+      const new_cars = cars.map((inner_car) => {
+        if (inner_car.id === car.id) return car
+        return inner_car
+      })
+
+      setCars(new_cars)
+
+      return response
+    } catch (error) {
+      console.log("Error editing car, ", error)
     }
   }
 
