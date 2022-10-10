@@ -1,68 +1,100 @@
-const headers = {
-  Origin: "http://127.0.0.1:5173",
+type TStatus = "available" | "in-maintenance" | "out-of-service"
+
+type TCar = {
+  id: number
+  brand: string
+  licensePlate: string
+  manufacturer: string
+  operationCity: string
+  status: TStatus
+  createdAt: Date
+  lastUpdatedAt: Date
 }
 
-const myHeaders = new Headers()
-myHeaders.append("Origin", "http://127.0.0.1")
-myHeaders.append("Content-Type", "application/json")
+const BACKEND_URL =
+  "https://nckbku0m91.execute-api.eu-central-1.amazonaws.com/cars"
 
-const myInit = {
-  mode: <RequestMode>"no-cors",
-  headers: myHeaders,
-  cache: <RequestCache>"no-cache",
-}
-
-console.log('myInit:', myInit)
-
-const shared_options = {
-  mode: <RequestMode>"no-cors", // no-cors, *cors, same-origin
-  cache: <RequestCache>"no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-  credentials: <RequestCredentials>"omit", // include, *same-origin, omit
-  headers,
-  redirect: <RequestRedirect>"follow", // manual, *follow, error
-  referrerPolicy: <ReferrerPolicy>"no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-}
-
-// const BACKEND_URL = "https://nckbku0m91.execute-api.eu-central-1.amazonaws.com"
-const BACKEND_URL = ''
-
-export async function getData(url = "") {
-  // Default options are marked with *
-  const response = await fetch(`${BACKEND_URL}/${url}`, {
-    method: "GET", // *GET, POST, PUT, DELETE, etc.
-    ...myInit,
-  })
-
-  console.log(response, response.headers.get("Origin"),response.headers.get("Content-Type"))
-
-  // return response.json() // parses JSON response into native JavaScript objects
-}
-
-// updateData("https://example.com/answer", { answer: 42 }).then((data) => {
-//   console.log(data) // JSON data parsed by `data.json()` call
-// })
-
-export async function updateData(url = "", data = {}) {
-  // Default options are marked with *
-  const response = await fetch(`${BACKEND_URL}/${url}`, {
-    method: "PUT", // *GET, POST, PUT, DELETE, etc.
-    ...myInit,
+export const get_cars = async () =>
+  await fetch(BACKEND_URL, {
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
-      ...headers,
     },
-    body: JSON.stringify(data), // body data type must match "Content-Type" header
-  })
+  }).then((res) => res.json() as Promise<TCar[]>)
 
-  return response.json() // parses JSON response into native JavaScript objects
+export const get_car = async (id: number) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    const res_json = await response.json()
+
+    if (response.status === 400 || response.status === 404)
+      return {
+        error: res_json,
+      }
+
+    return { data: res_json }
+  } catch (error) {
+    if (error instanceof Error)
+      return {
+        error: error?.message,
+      }
+  }
 }
 
-export async function deleteData(url = "") {
-  // Default options are marked with *
-  const response = await fetch(`${BACKEND_URL}/${url}`, {
-    method: "DELETE", // *GET, POST, PUT, DELETE, etc.
-    ...myInit,
-  })
+export const put_car = async (id: number, data: any) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
 
-  return response.json() // parses JSON response into native JavaScript objects
+    const res_json = await response.json()
+
+    if (response.status === 400 || response.status === 404)
+      return {
+        error: res_json,
+      }
+
+    return { data: res_json }
+  } catch (error) {
+    if (error instanceof Error)
+      return {
+        error: error?.message,
+      }
+  }
+}
+
+export const delete_car = async (id: number) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    const res_json = await response.json()
+
+    if (response.status === 400 || response.status === 404)
+      return {
+        error: res_json,
+      }
+
+    return { data: res_json }
+  } catch (error) {
+    if (error instanceof Error)
+      return {
+        error: error?.message,
+      }
+    console.log("error delete fetch : ", error)
+  }
 }

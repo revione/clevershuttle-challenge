@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { get_cars, get_car, put_car } from "./Fetch2"
+import { get_cars, get_car, put_car, delete_car as remove_car } from "./fetch"
 
 type TStatus = "available" | "in-maintenance" | "out-of-service"
 
@@ -38,23 +38,26 @@ const Field = ({
 type Tupdate_and_delete = {
   update_car: (car: TCar) => Promise<
     | {
-        error: string
-        message?: undefined
+        error: any
+        data?: undefined
       }
     | {
-        message: string
+        data: any
         error?: undefined
       }
+    | undefined
   >
-  delete_car: (car_id: number) =>
+  delete_car: (car_id: number) => Promise<
     | {
-        error: string
-        message?: undefined
+        error: any
+        data?: undefined
       }
     | {
-        message: string
+        data: any
         error?: undefined
       }
+    | undefined
+  >
 }
 
 type Tfind_car = (car_id: number) => Promise<
@@ -95,7 +98,6 @@ export const Car = ({
   }
 
   const handle_save = async () => {
-    
     const response = await update_car(car_edition)
 
     if (response?.error) {
@@ -107,14 +109,22 @@ export const Car = ({
       return
     }
 
-    if (response.message) console.log("response.message : ", response.message)
+    if (response?.data) console.log("response.data : ", response.data)
     set_is_editing(false)
   }
 
-  const handle_delete = () => {
-    const response = delete_car(id)
-    if (response.error) console.log(response.error)
-    if (response.message) console.log(response.message)
+  const handle_delete = async () => {
+    const response = await delete_car(id)
+    if (response?.error) {
+      set_error(response.error)
+
+      setTimeout(() => {
+        set_error("")
+      }, 5000)
+      return
+    }
+
+    if (response?.data) console.log("response.data : ", response.data)
   }
 
   const [car_edition, set_car_edition] = useState(car)
@@ -129,9 +139,15 @@ export const Car = ({
         margin: "5rem",
       }}
     >
-      {error && <div style={{
-        color: "red",
-      }}>{error}</div>}
+      {error && (
+        <div
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </div>
+      )}
       {!is_editing && (
         <>
           <div>id : {id}</div>
@@ -326,20 +342,26 @@ const useCars = () => {
     }
   }
 
-  const delete_car = (car_id: number) => {
-    if (!cars)
-      return {
-        error: "No cars",
-      }
+  const delete_car = async (car_id: number) => {
+    try {
+      const response = await remove_car(car_id)
 
-    if (car_id === last_car_searched) set_clean(true)
+      if (!cars)
+        return {
+          error: "No cars",
+        }
 
-    const new_cars = cars.filter((car) => car.id !== car_id)
+      if (response?.error) return response
 
-    setCars(new_cars)
+      if (car_id === last_car_searched) set_clean(true)
 
-    return {
-      message: "Car delited.",
+      const new_cars = cars.filter((car) => car.id !== car_id)
+
+      setCars(new_cars)
+
+      return response
+    } catch (error) {
+      console.log("Error edliting car, ", error)
     }
   }
 
