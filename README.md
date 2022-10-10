@@ -1,3 +1,38 @@
+____________________
+
+# Stack used
+
+**Vite - React - Typescript** 
+
+Run development
+```
+yarn dev
+```
+
+Make a build
+```
+yarn build
+```
+
+See the build preview
+```
+yarn preview
+```
+
+
+____________________
+
+
+## steps followed to solve the challenge
+
+-   read the documentation provided, after understanding what was required, think about the steps to follow.
+-   first make a mock up of cars.
+-   make the UI simple but with input animations to make it look good enough.
+-   organize the fetch, consume the resources.
+-   display the results in the UI
+-   upload the project.
+
+
 # Engineering - Frontend Challenge
 
 Dear candidate, thank you for showing interest to join CleverShuttle Engineering team. 
@@ -53,6 +88,9 @@ A “Car” model would have the following properties:
    LastUpdatedAt  datetime
 ```
 
+____________________________________________________________
+
+
 The API responds to following requests:
 
 
@@ -96,6 +134,8 @@ Date: Wed, 03 Aug 2022 13:42:46 GMT
    }
 ]
 ```
+
+____________________________________________________________
 
 GET /cars/foo (invalid id type)
 GET /cars/foo HTTP/1.1
@@ -332,25 +372,4 @@ We look forward to review your solution!
 Your CleverShuttle Engineering Team
 
 
-
-____________________
-
-# Stack used
-
-**Vite - React - Typescript** 
-
-Run development
-```
-yarn dev
-```
-
-Make a build
-```
-yarn build
-```
-
-See the build preview
-```
-yarn preview
-```
 
