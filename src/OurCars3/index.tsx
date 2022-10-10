@@ -14,26 +14,7 @@ type TCar = {
   lastUpdatedAt: Date
 }
 
-const Field = ({
-  name,
-  value,
-  onChange,
-}: {
-  name: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-}) => (
-  <label>
-    {name} :
-    <input
-      type="text"
-      placeholder={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-    />
-  </label>
-)
+
 
 type Tupdate_and_delete = {
   update_car: (car: TCar) => Promise<
@@ -71,6 +52,27 @@ type Tfind_car = (car_id: number) => Promise<
     }
   | undefined
 >
+
+const Field = ({
+  name,
+  value,
+  onChange,
+}: {
+  name: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}) => (
+  <label>
+    {name} :
+    <input
+      type="text"
+      placeholder={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+    />
+  </label>
+)
 
 export const Car = ({
   car,
