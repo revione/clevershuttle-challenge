@@ -2,16 +2,17 @@ const headers = {
   Origin: "http://127.0.0.1:5173",
 }
 
-
-const myHeaders = new Headers();
-myHeaders.append('Origin', 'http://127.0.0.1');
+const myHeaders = new Headers()
+myHeaders.append("Origin", "http://127.0.0.1")
+myHeaders.append("Content-Type", "application/json")
 
 const myInit = {
   mode: <RequestMode>"no-cors",
   headers: myHeaders,
   cache: <RequestCache>"no-cache",
-};
+}
 
+console.log('myInit:', myInit)
 
 const shared_options = {
   mode: <RequestMode>"no-cors", // no-cors, *cors, same-origin
@@ -22,7 +23,8 @@ const shared_options = {
   referrerPolicy: <ReferrerPolicy>"no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
 }
 
-const BACKEND_URL = "https://nckbku0m91.execute-api.eu-central-1.amazonaws.com"
+// const BACKEND_URL = "https://nckbku0m91.execute-api.eu-central-1.amazonaws.com"
+const BACKEND_URL = ''
 
 export async function getData(url = "") {
   // Default options are marked with *
@@ -31,9 +33,9 @@ export async function getData(url = "") {
     ...myInit,
   })
 
-  myHeaders.append('Accept-Encoding', 'deflate');
+  console.log(response, response.headers.get("Origin"),response.headers.get("Content-Type"))
 
-  return response.json() // parses JSON response into native JavaScript objects
+  // return response.json() // parses JSON response into native JavaScript objects
 }
 
 // updateData("https://example.com/answer", { answer: 42 }).then((data) => {
