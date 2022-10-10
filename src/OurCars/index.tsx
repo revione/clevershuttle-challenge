@@ -1,163 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { getCars, getCar, putCar, deleteCar as removeCar } from "./fetch"
 
-type TStatus = "available" | "in-maintenance" | "out-of-service"
-
-type TCar = {
-  Id: number
-  Brand: string
-  LicensePlate: string
-  Manufacturer: string
-  OperationCity: string
-  Status: TStatus
-  CreatedAt: Date
-  LastUpdatedAt: Date
-}
-
-const STATUS = ["available", "in-maintenance", "out-of-service"]
-
-const make_a_date = () => new Date(new Date().toISOString())
-
-const car_example = {
-  Id: 0,
-  Brand: "Brand",
-  LicensePlate: "LicensePlate",
-  Manufacturer: "Manufacturer",
-  OperationCity: "OperationCity",
-  Status: "available",
-  CreatedAt: make_a_date(),
-  LastUpdatedAt: make_a_date(),
-}
-
-function getRandomIntInclusive(min: number, max: number) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random() * (max - min + 1) + min) // The maximum is inclusive and the minimum is inclusive
-}
-
-let cars = Array.from({ length: 10 }, (_, i) => ({
-  ...car_example,
-  Id: i,
-  Status: STATUS[getRandomIntInclusive(0, 2)] as TStatus,
-  CreatedAt: make_a_date(),
-  LastUpdatedAt: make_a_date(),
-}))
-
-const find_a_car = (car_id: number | string) => {
-  if (isNaN(Number(car_id)))
-    return {
-      error: "Please suply a number",
-    }
-
-  const car_index = cars.findIndex(
-    (inner_car) => inner_car.Id === Number(car_id)
-  )
-
-  if (car_index === -1)
-    return {
-      error: "Car not founded",
-    }
-
-  return {
-    data: cars[car_index],
-  }
-}
-
-const update_a_car = (car: TCar) => {
-  if (isNaN(Number(car.Id)))
-    return {
-      error: "it is a string.",
-    }
-
-  const car_index = cars.findIndex(
-    (inner_car) => inner_car.Id === Number(car.Id)
-  )
-
-  if (car_index === -1)
-    return {
-      error: "Car not founded",
-    }
-
-  cars = cars.map((inner_car) => {
-    if (inner_car.Id === car.Id) return car
-    return inner_car
-  })
-
-  return {
-    message: "Car edited.",
-  }
-}
-
-const delete_a_car = (car_id: number) => {
-  if (isNaN(Number(car_id)))
-    return {
-      error: "Please suply a number",
-    }
-
-  const car_index = cars.findIndex(
-    (inner_car) => inner_car.Id === Number(car_id)
-  )
-
-  if (car_index === -1)
-    return {
-      error: "Car not founded",
-    }
-
-  cars = cars.filter((car) => car.Id !== car_id)
-
-  return {
-    message: "Car delited.",
-  }
-}
-
-export const SearchACar = () => {
-  const [car_id, set_car_id] = useState("")
-  const [car_founded, set_car_founded] = useState<TCar>()
-  const [error, set_error] = useState("")
-
-  const handleSubmit = (e: React.SyntheticEvent) => {
-    e.preventDefault()
-
-    const car_founded = find_a_car(Number(car_id))
-
-    if (car_founded.error) {
-      set_car_founded(undefined)
-
-      set_error(car_founded.error)
-      setTimeout(() => {
-        set_error("")
-      }, 5000)
-    }
-
-    set_error("")
-
-    set_car_founded(car_founded.data)
-  }
-
-  return (
-    <div>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          margin: "5rem",
-        }}
-      >
-        <input
-          type="text"
-          value={car_id}
-          onChange={(e) => set_car_id(e.target.value)}
-          placeholder="1"
-        />
-        <button type="submit">Search</button>
-      </form>
-
-      <div>{error && error}</div>
-
-      {/* <pre>{car_founded && JSON.stringify(car_founded, null, 2)}</pre> */}
-
-      {car_founded && <Car car={car_founded} />}
-    </div>
-  )
-}
+import { TCar, TUpdateAndDeleteCar, TFindCar } from "./types"
 
 const Field = ({
   name,
@@ -176,44 +20,70 @@ const Field = ({
       name={name}
       value={value}
       onChange={onChange}
+      style={{
+        padding: "0.45rem",
+      }}
     />
   </label>
 )
 
-export const Car = ({ car }: { car: TCar }) => {
-  // return <pre>{JSON.stringify(car, null, 2)} </pre>
-
+export const Car = ({
+  car,
+  updateCar,
+  deleteCar,
+}: { car: TCar } & TUpdateAndDeleteCar) => {
   const {
-    Id,
-    Brand,
-    LicensePlate,
-    Manufacturer,
-    OperationCity,
-    Status,
-    CreatedAt,
-    LastUpdatedAt,
+    id,
+    brand,
+    licensePlate,
+    manufacturer,
+    operationCity,
+    status,
+    createdAt,
+    lastUpdatedAt,
   } = car
 
-  const [is_editing, set_is_editing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [error, setError] = useState("")
 
-  const handle_edit = () => {
-    set_is_editing(true)
+  const handleEdit = () => {
+    setIsEditing(true)
   }
 
-  const handle_save = () => {
-    set_is_editing(false)
-    const response = update_a_car(car_edition)
-    if (response.error) console.log(response.error)
-    if (response.message) console.log(response.message)
+  const handleSave = async () => {
+    const response = await updateCar(car_edition)
+
+    if (response?.error) {
+      setError(response.error)
+
+      setTimeout(() => {
+        setError("")
+      }, 5000)
+      return
+    }
+
+    if (response?.data) console.log("response.data : ", response.data)
+    setIsEditing(false)
   }
 
-  const handle_delete = () => {}
+  const handle_delete = async () => {
+    const response = await deleteCar(id)
+    if (response?.error) {
+      setError(response.error)
+
+      setTimeout(() => {
+        setError("")
+      }, 5000)
+      return
+    }
+
+    if (response?.data) console.log("response.data : ", response.data)
+  }
 
   const [car_edition, set_car_edition] = useState(car)
 
-  const handle_change_input = (e: React.ChangeEvent<HTMLInputElement>) => {
-    return set_car_edition((s) => ({ ...s, [e.target.name]: e.target.value }))
-  }
+  const handle_change_input = (e: React.ChangeEvent<HTMLInputElement>) =>
+    set_car_edition((s) => ({ ...s, [e.target.name]: e.target.value }))
 
   return (
     <div
@@ -221,93 +91,267 @@ export const Car = ({ car }: { car: TCar }) => {
         margin: "5rem",
       }}
     >
-      {!is_editing && (
+      {error && (
+        <div
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </div>
+      )}
+      {!isEditing && (
         <>
-          <div>Id : {Id}</div>
-          <div>Brand : {Brand}</div>
-          <div>LicensePlate : {LicensePlate}</div>
-          <div>Manufacturer : {Manufacturer}</div>
-          <div>OperationCity : {OperationCity}</div>
-          <div>Status : {String(Status)}</div>
-          <div>CreatedAt : {String(CreatedAt)}</div>
-          <div>LastUpdatedAt : {String(LastUpdatedAt)}</div>
+          <div>id : {id}</div>
+          <div>Brand : {brand}</div>
+          <div>LicensePlate : {licensePlate}</div>
+          <div>Manufacturer : {manufacturer}</div>
+          <div>OperationCity : {operationCity}</div>
+          <div>Status : {String(status)}</div>
+          <div>CreatedAt : {String(createdAt)}</div>
+          <div>LastUpdatedAt : {String(lastUpdatedAt)}</div>
         </>
       )}
 
-      {is_editing && (
+      {isEditing && (
         <div
           style={{
             display: "flex",
             flexDirection: "column",
           }}
         >
-          {/* <input type='text'placeholder="etwas" value={car_edition.Id} onChange={handle_change_input} />  */}
-
           <Field
-            name="LicensePlate"
-            value={car_edition.LicensePlate}
+            name="licensePlate"
+            value={car_edition.licensePlate}
             onChange={handle_change_input}
           />
 
           <Field
-            name="Manufacturer"
-            value={car_edition.Manufacturer}
+            name="manufacturer"
+            value={car_edition.manufacturer}
             onChange={handle_change_input}
           />
 
           <Field
-            name="OperationCity"
-            value={car_edition.OperationCity}
+            name="operationCity"
+            value={car_edition.operationCity}
             onChange={handle_change_input}
           />
 
           <Field
-            name="Status"
-            value={car_edition.Status}
+            name="status"
+            value={car_edition.status}
             onChange={handle_change_input}
           />
-
-          {/* <input type='text'placeholder="etwas" value={car_edition.CreatedAt} onChange={handle_change_input} /> 
-          <input type='text'placeholder="etwas" value={car_edition.LastUpdatedAt} onChange={handle_change_input} />  */}
         </div>
       )}
 
       <div>
-        {!is_editing && (
+        {!isEditing && (
           <>
-            <button onClick={handle_edit}>Edit</button>
+            <button onClick={handleEdit}>Edit</button>
             <button onClick={handle_delete}>Delete</button>
           </>
         )}
 
-        {is_editing && <button onClick={handle_save}>Save</button>}
+        {isEditing && <button onClick={handleSave}>Save</button>}
       </div>
     </div>
   )
 }
 
-export const Cars = () => {
+export const SearchACar = ({
+  findCar,
+  updateCar,
+  deleteCar,
+  searchCleaner: { clean, cleaned },
+}: {
+  findCar: TFindCar
+  searchCleaner: {
+    clean: boolean
+    cleaned: () => void
+  }
+} & TUpdateAndDeleteCar) => {
+  const [car_id, set_car_id] = useState("")
+  const [car_founded, set_car_founded] = useState<TCar>()
+  const [error, setError] = useState("")
 
-  let inner_cars = cars
+  const handleSubmit = async (e: React.SyntheticEvent) => {
+    e.preventDefault()
 
-  console.log(inner_cars)
+    const response = await findCar(Number(car_id))
 
+    if (response?.error) {
+      set_car_founded(undefined)
+
+      setError(response.error)
+      setTimeout(() => {
+        setError("")
+      }, 5000)
+
+      return
+    }
+
+    setError("")
+
+    set_car_founded(response?.data)
+  }
+
+  useEffect(() => {
+    if (clean) {
+      set_car_founded(undefined)
+      cleaned()
+    }
+  }, [clean])
 
   return (
     <div>
-      {inner_cars.map((car) => (
-        <Car key={car.Id} car={car} />
-        // <div key={car.Id}>
-        //   {/* <pre key={car.Id}>{JSON.stringify(car, null, 2)}</pre> */}
-        // </div>
-      ))}
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          margin: "5rem 5rem 2rem",
+        }}
+      >
+        <input
+          type="text"
+          value={car_id}
+          onChange={(e) => set_car_id(e.target.value)}
+          placeholder="1"
+          style={{ padding: "0.75rem" }}
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      <div
+        style={{
+          margin: "2rem 5rem",
+        }}
+      >
+        {error && error}
+      </div>
+
+      {car_founded && <Car {...{ car: car_founded, updateCar, deleteCar }} />}
     </div>
   )
 }
 
-export const OurCars = () => (
-  <div>
-    <SearchACar />
-    <Cars />
-  </div>
-)
+const getAsyncCars = async () => {
+  try {
+    const fetch_cars = await getCars()
+    return fetch_cars
+  } catch (error) {
+    console.log("Error getAsyncCars  : ", error)
+  }
+}
+
+const useCars = () => {
+  const [cars, setCars] = useState<TCar[]>()
+  const [lastCarSearched, setLastCarSearched] = useState<number>()
+  const [clean, setClean] = useState(false)
+
+  const cleaned = () => {
+    setClean(false)
+  }
+
+  //
+  // get cars
+  useEffect(() => {
+    getAsyncCars().then((inner_cars) => {
+      setCars(inner_cars)
+    })
+  }, [])
+
+  const findCar = async (car_id: number) => {
+    try {
+      const fetch_car = await getCar(car_id)
+      setLastCarSearched(car_id)
+      return fetch_car
+    } catch (error) {
+      console.log("error :", error)
+    }
+  }
+
+  const updateCar = async (car: TCar) => {
+    try {
+      const response = await putCar(car.id, car)
+
+      if (!cars)
+        return {
+          error: "No cars",
+        }
+
+      if (response?.error) return response
+
+      const new_cars = cars.map((inner_car) => {
+        if (inner_car.id === car.id) return car
+        return inner_car
+      })
+
+      setCars(new_cars)
+
+      return response
+    } catch (error) {
+      console.log("Error editing car, ", error)
+    }
+  }
+
+  const deleteCar = async (car_id: number) => {
+    try {
+      const response = await removeCar(car_id)
+
+      if (!cars)
+        return {
+          error: "No cars",
+        }
+
+      if (response?.error) return response
+
+      if (car_id === lastCarSearched) setClean(true)
+
+      const new_cars = cars.filter((car) => car.id !== car_id)
+
+      setCars(new_cars)
+
+      return response
+    } catch (error) {
+      console.log("Error edliting car, ", error)
+    }
+  }
+
+  return {
+    cars,
+    findCar,
+    updateCar,
+    deleteCar,
+    searchCleaner: {
+      clean,
+      cleaned,
+    },
+  }
+}
+
+export const OurCars = () => {
+  const { cars, findCar, updateCar, deleteCar, searchCleaner } = useCars()
+
+  return (
+    <div>
+      <SearchACar
+        findCar={findCar}
+        updateCar={updateCar}
+        deleteCar={deleteCar}
+        searchCleaner={searchCleaner}
+      />
+
+      <div>
+        {cars?.map((car) => (
+          <Car
+            key={car.id}
+            car={car}
+            updateCar={updateCar}
+            deleteCar={deleteCar}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
