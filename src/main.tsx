@@ -1,7 +1,9 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
 // import App from './App'
-import { OurCars } from "./OurCars"
+// import { OurCars } from "./OurCars"
+import { OurCars } from "./OurCars2"
+
 import "./index.css"
 
 import { ReduxProvider } from "./redux"
