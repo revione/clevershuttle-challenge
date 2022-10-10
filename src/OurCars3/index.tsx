@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { getData } from "./fetch"
-import { get_cars } from "./Fetch2"
+import { get_cars, get_car } from "./Fetch2"
 
 type TStatus = "available" | "in-maintenance" | "out-of-service"
 
@@ -14,7 +14,6 @@ type TCar = {
   createdAt: Date
   lastUpdatedAt: Date
 }
-
 
 const STATUS = ["available", "in-maintenance", "out-of-service"]
 
@@ -108,15 +107,17 @@ type Tupdate_and_delete = {
       }
 }
 
-type Tfind_car = (id: number) =>
+type Tfind_car = (car_id: number) => Promise<
   | {
-      error: string
+      error: any
       data?: undefined
     }
   | {
-      data: TCar
+      data: any
       error?: undefined
     }
+  | undefined
+>
 
 export const Car = ({
   car,
@@ -243,23 +244,25 @@ export const SearchACar = ({
   const [car_founded, set_car_founded] = useState<TCar>()
   const [error, set_error] = useState("")
 
-  const handleSubmit = (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
 
-    const response = find_car(Number(car_id))
-
-    if (response.error) {
+    const response = await find_car(Number(car_id))
+    
+    if (response?.error) {
       set_car_founded(undefined)
 
       set_error(response.error)
       setTimeout(() => {
         set_error("")
       }, 5000)
+
+      return
     }
 
     set_error("")
 
-    set_car_founded(response.data)
+    set_car_founded(response?.data)
   }
 
   useEffect(() => {
@@ -274,7 +277,7 @@ export const SearchACar = ({
       <form
         onSubmit={handleSubmit}
         style={{
-          margin: "5rem",
+          margin: "5rem 5rem 2rem",
         }}
       >
         <input
@@ -286,14 +289,16 @@ export const SearchACar = ({
         <button type="submit">Search</button>
       </form>
 
-      <div>{error && error}</div>
+      <div style={{
+        margin: '2rem 5rem'
+      }}>{error && error}</div>
 
       {car_founded && <Car {...{ car: car_founded, update_car, delete_car }} />}
     </div>
   )
 }
 
-const get_cars_async = async () => {
+const get_async_cars = async () => {
   try {
     const fetch_cars = await get_cars()
     return fetch_cars
@@ -314,26 +319,18 @@ const useCars = () => {
   //
   // get cars
   useEffect(() => {
-    get_cars_async().then((inner_cars) => {
-      console.log(inner_cars)
-      setCars(inner_cars)})
+    get_async_cars().then((inner_cars) => {
+      setCars(inner_cars)
+    })
   }, [])
 
-  const find_car = (car_id: number) => {
-    if (!cars)
-      return {
-        error: "No cars",
-      }
-
-    const response = find_internal_car(cars, car_id)
-    if (response.error) return response
-    if (response.data) {
+  const find_car = async (car_id: number) => {
+    try {
+      const fetch_car = await get_car(car_id)
       set_last_car_searched(car_id)
-      return response
-    }
-
-    return {
-      error: "unknown",
+      return fetch_car
+    } catch (error) {
+      console.log("error :", error)
     }
   }
 
